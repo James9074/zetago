@@ -49,7 +49,8 @@
     //Reattach on boot
     echo UUID=`sudo blkid -s UUID -o value /dev/disk/by-id/google-zeta-storage-disk-1` /mnt/disks/storage ext4 discard,defaults,nofail 0 2 | sudo tee -a /etc/fstab
     ```
-8. Go to [Clone Repository](#clone-repository)
+8. Finally, go to "Netorking" in the Google Cloud Platform menu and add a firewall rule to allow `tcp:50091, udp:50091` from 0.0.0.0/0. This is needed by DCOS later on in the install.
+9. Go to [Clone Repository](#clone-repository)
 
 ### Initial Prep - On Prem
 ----------
@@ -118,7 +119,7 @@ That is the fundamental difference, if you don't want to have "public" nodes as 
 
 ### DCOS and Firewall Install
 ----------
-1. Run the prep by typeing `$ ./zeta dcos`
+1. Run the prep by typing `$ ./zeta dcos`
     - It will ask some questions about conf, including showing you the internal IPs of your nodes
     - IP for bootstrap node (use the init node, the default)
     - Port for bootstrap (use the default)
