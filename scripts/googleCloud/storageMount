@@ -1,0 +1,50 @@
+#!/bin/bash
+
+#Show disks:
+echo Disks:
+ls /dev/disk/by-id
+
+echo Enter the disk ID \(found by running ls /dev/disk/by-id\)
+read DISK
+echo Enter the mount point \(this will become /mnt/disks/[Name]\) "storage" is a good default
+read MOUNT
+
+#Format your new storage disk
+if sudo mkfs.ext4 -F -E lazy_itable_init=0,lazy_journal_init=0,discard /dev/disk/by-id/$DISK; then
+  echo $DISK successfully formatted.
+else
+  echo -e "\e[31mError: $DISK was not found. Perhaps there is a typo."
+  exit 0 
+fi	
+
+#Make the mounting directory
+if sudo mkdir -p /mnt/disks/$MOUNT; then
+  echo /mnt/disks/$MOUNT successfully created \(or already exists\).
+else
+  echo -e "\e[31mError: Something went wrong while trying to create /mnt/disks/$MOUNT"
+  exit 0 
+fi  
+
+#Mount it
+if sudo mount -o discard,defaults /dev/disk/by-id/$DISK /mnt/disks/$MOUNT; then
+  echo $DISK successfully moutned to /mnt/disks/$MOUNT.
+else
+  echo -e "\e[31mError: $DISK count not be moutned to /mnt/disks/$MOUNT."
+  exit 0 
+fi
+
+#Give permissions (read/write) to the device for all users
+if ! sudo chmod a+w /mnt/disks/$MOUNT; then
+  echo -e "\e[31mError: Could not grant read/write to /mnt/disks/$MOUNT."
+  exit 0 
+fi 
+
+#Reattach on boot
+if echo UUID=`sudo blkid -s UUID -o value /dev/disk/by-id/$DISK` /mnt/disks/$MOUNT ext4 discard,defaults,nofail 0 2 | sudo tee -a /etc/fstab; then
+  echo $DISK should mount to /mnt/disk/$MOUNT on startup.
+else
+  echo -e "\e[31mError: $DISK count not be moutned to /mnt/disks/$MOUNT on startup. Look into /etc/fstab for details..."
+  exit 0 
+fi
+
+exit 1;
