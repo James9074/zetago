@@ -16,6 +16,41 @@
 7. Pick a node, upload the private key from step 1 and connect to this node. 
 8. Go to [Clone Repository](#clone-repository)
 
+### Initial Prep and Instance launch (Google Cloud Platform)
+----------
+
+1. Get a Google Cloud Platform account. Upload a keypair (without a password) so you have one accessible to use for your cluster. 
+2. Create an instance group for 5 instances. 
+    - For "Instance Template", click create new template, and create an instance template with Ubuntu 16.04 LTS, Machine Type of 4vCPUs (15gb memory - n1-standard-4) and 50gb of SSD storage.
+    - Create the instance group, which will automatically create 5 instances for you.
+3. Go to the Metadata Page and click SSH keys. Add your local machine's pub key here. This will let you log in to all isntances in the project. (https://console.cloud.google.com/compute/metadata/sshKeys)
+4. Clcik "VM Instances" on the left sidebar to see your node IPs. These will be needed in the [Prep Cluster](#prep-cluster) section.
+5. For each Instance, click the instance name, and click "Edit" at the top. You will need to attach a 10gb (google won't let you use less than 10gb per disk) disk to each node for Mapr to use.
+6. Click "Add item" under Additional disks, and create a disk with 10gb of space and no image. Repeat this for all nodes on the cluster.
+7. Now we need to reboot and ssh into the nodes and mount these disks. I found that a few incorrect attempts locked me out, requiring a node reboot in the cloud console, so if ssh hangs, reboot the node. Alternatively, you can click "SSH" on the VM Instances page to open a browser window with an ssh client active.
+    - Check out the mounting guide here to learn how to mount a disk in linux: https://cloud.google.com/compute/docs/disks/add-persistent-disk
+    - You will need to do this on each node. I've included a bash script in scripts/googleCloud/storageMount that will do this for you. It should look like:
+    ```
+    //Get the disk ID (I've named mine google-zeta-storage-disk-x, where x is a number 1-5 for a node that the disk belongs to) 
+    ls /dev/disk/by-id
+    
+    //Format your new storage disk
+    sudo mkfs.ext4 -F -E lazy_itable_init=0,lazy_journal_init=0,discard /dev/disk/by-id/google-zeta-storage-disk-1 
+    
+    //Make the mounting directory
+    sudo mkdir -p /mnt/disks/storage
+    
+    //Mount it
+    sudo mount -o discard,defaults /dev/disk/by-id/google-zeta-storage-disk-1 /mnt/disks/storage
+
+    //Give permissions (read/write) to the device for all users
+    sudo chmod a+w /mnt/disks/storage
+    
+    //Reattach on boot
+    echo UUID=`sudo blkid -s UUID -o value /dev/disk/by-id/google-zeta-storage-disk-1` /mnt/disks/storage ext4 discard,defaults,nofail 0 2 | sudo tee -a /etc/fstab
+    ```
+8. Go to [Clone Repository](#clone-repository)
+
 ### Initial Prep - On Prem
 ----------
 1. Get some master nodes
