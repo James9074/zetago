@@ -28,27 +28,6 @@
 5. For each Instance, click the instance name, and click "Edit" at the top. You will need to attach a 10gb (google won't let you use less than 10gb per disk) disk to each node for Mapr to use.
 6. Click "Add item" under Additional disks, and create a disk with 10gb of space and no image. Repeat this for all nodes on the cluster.
 7. Now we need to reboot and ssh into the nodes and mount these disks. I found that a few incorrect attempts locked me out, requiring a node reboot in the cloud console, so if ssh hangs, reboot the node. Alternatively, you can click "SSH" on the VM Instances page to open a browser window with an ssh client active.
-    - Check out the mounting guide here to learn how to mount a disk in linux: https://cloud.google.com/compute/docs/disks/add-persistent-disk
-    - You will need to do this on each node. I've included a bash script in scripts/googleCloud/storageMount that will do this for you. It should look like:
-    ```
-    //Get the disk ID (I've named mine google-zeta-storage-disk-x, where x is a number 1-5 for a node that the disk belongs to) 
-    ls /dev/disk/by-id
-    
-    //Format your new storage disk
-    sudo mkfs.ext4 -F -E lazy_itable_init=0,lazy_journal_init=0,discard /dev/disk/by-id/google-zeta-storage-disk-1 
-    
-    //Make the mounting directory
-    sudo mkdir -p /mnt/disks/storage
-    
-    //Mount it
-    sudo mount -o discard,defaults /dev/disk/by-id/google-zeta-storage-disk-1 /mnt/disks/storage
-
-    //Give permissions (read/write) to the device for all users
-    sudo chmod a+w /mnt/disks/storage
-    
-    //Reattach on boot
-    echo UUID=`sudo blkid -s UUID -o value /dev/disk/by-id/google-zeta-storage-disk-1` /mnt/disks/storage ext4 discard,defaults,nofail 0 2 | sudo tee -a /etc/fstab
-    ```
 8. Finally, go to "Netorking" in the Google Cloud Platform menu and add a firewall rule to allow `tcp:50091, udp:50091` from 0.0.0.0/0. This is needed by DCOS later on in the install.
 9. Go to [Clone Repository](#clone-repository)
 
